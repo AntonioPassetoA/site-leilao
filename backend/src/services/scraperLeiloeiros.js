@@ -17,6 +17,24 @@ function parseCurrency(value) {
 // Detect property type from text
 function detectPropertyType(text) {
   const t = text?.toLowerCase() || '';
+
+  // Excluir veículos - retorna null para não importar
+  if (t.includes('carro') || t.includes('veículo') || t.includes('veiculo') ||
+      t.includes('moto') || t.includes('caminhão') || t.includes('caminhao') ||
+      t.includes('ônibus') || t.includes('onibus') || t.includes('van') ||
+      t.includes('utilitário') || t.includes('utilitario') || t.includes('trator') ||
+      t.includes('máquina') || t.includes('maquina') || t.includes('equipamento') ||
+      t.includes('fiat') || t.includes('volkswagen') || t.includes('chevrolet') ||
+      t.includes('ford') || t.includes('honda') || t.includes('toyota') ||
+      t.includes('hyundai') || t.includes('renault') || t.includes('peugeot') ||
+      t.includes('citroen') || t.includes('jeep') || t.includes('bmw') ||
+      t.includes('mercedes') || t.includes('audi') || t.includes('porsche') ||
+      t.includes('yamaha') || t.includes('suzuki') || t.includes('kawasaki') ||
+      t.includes('harley') || t.includes('scania') || t.includes('volvo') ||
+      t.includes('iveco') || t.includes('man ') || t.includes('daf ')) {
+    return null; // Não é imóvel
+  }
+
   if (t.includes('apartamento') || t.includes('apto')) return 'APARTMENT';
   if (t.includes('casa')) return 'HOUSE';
   if (t.includes('terreno') || t.includes('lote')) return 'LAND';
@@ -86,6 +104,10 @@ async function importProperties(properties, source, bankName, logId, sourceType 
       const price = parseCurrency(prop.price);
       if (!price || price <= 0) continue;
 
+      // Verificar se é imóvel (não veículo)
+      const propType = detectPropertyType(prop.title || prop.description);
+      if (!propType) continue; // Pular veículos e outros não-imóveis
+
       const state = prop.state || extractState(prop.location);
       const city = prop.city || extractCity(prop.location);
 
@@ -108,7 +130,7 @@ async function importProperties(properties, source, bankName, logId, sourceType 
         city: city || 'Não informada',
         state: state || 'SP',
         zipCode: prop.zipCode || '',
-        propertyType: detectPropertyType(prop.title || prop.description),
+        propertyType: propType,
         auctionType: prop.auctionType || 'EXTRAJUDICIAL',
         minBid: price,
         evaluatedValue: prop.evaluatedPrice ? parseCurrency(prop.evaluatedPrice) : null,

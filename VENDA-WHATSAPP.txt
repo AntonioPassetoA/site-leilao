@@ -1,0 +1,32 @@
+🏠 *VENDO: Site de Leilões de Imóveis*
+
+Fala! Tô vendendo um site completo que agrega imóveis de leilão dos principais bancos (Caixa, BB, Santander, Itaú) e leiloeiros.
+
+*O que faz:*
+• Busca automática de imóveis em leilão
+• Sistema de leads (você vende pra corretores)
+• Painel admin completo
+• Login de usuários
+• SEO otimizado pro Google
+
+*Já vem com:*
+✅ 5 scrapers funcionando
+✅ Frontend moderno (React)
+✅ Backend completo (Node.js)
+✅ Banco de dados (PostgreSQL)
+✅ Documentação de deploy
+✅ Segurança e LGPD pronto
+✅ 30 dias de suporte
+
+*Como monetizar:*
+• Vender leads: R$ 30-50 cada
+• Google Adsense
+• Planos premium
+
+*Preço:*
+💰 Código fonte: R$ 5.000
+💰 Completo + suporte: R$ 12.000
+
+Mando vídeo mostrando tudo funcionando!
+
+Interessado? Me chama!

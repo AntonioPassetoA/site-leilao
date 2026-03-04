@@ -1,0 +1,27 @@
+# Robots.txt para Leilão Imóveis
+# https://www.seusite.com.br
+
+User-agent: *
+Allow: /
+
+# Páginas permitidas
+Allow: /buscar
+Allow: /imovel/
+Allow: /como-funciona
+Allow: /termos-de-uso
+Allow: /politica-de-privacidade
+
+# Páginas bloqueadas (área privada)
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /minha-conta
+Disallow: /minha-conta/*
+Disallow: /login
+Disallow: /cadastro
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://www.seusite.com.br/sitemap.xml
+
+# Crawl delay (opcional - para não sobrecarregar o servidor)
+Crawl-delay: 1

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#e5e7eb"/>
+  <g transform="translate(150, 100)">
+    <path d="M50 10 L95 45 L95 90 L5 90 L5 45 Z" fill="#9ca3af" stroke="#6b7280" stroke-width="2"/>
+    <rect x="20" y="55" width="20" height="25" fill="#6b7280"/>
+    <rect x="55" y="55" width="15" height="15" fill="#6b7280"/>
+    <rect x="55" y="35" width="15" height="15" fill="#6b7280"/>
+  </g>
+  <text x="200" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">Imagem indisponível</text>
+</svg>

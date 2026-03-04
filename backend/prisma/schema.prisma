@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  cpf       String     @unique
+  phone     String
+  password  String
+  role      Role       @default(USER)
+  verified  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bids      Bid[]
+  favorites Favorite[]
+
+  @@map("users")
+}
+
+model Property {
+  id           String         @id @default(uuid())
+  title        String
+  description  String         @db.Text
+  address      String
+  city         String
+  state        String
+  zipCode      String
+  area         Float?
+  bedrooms     Int?
+  bathrooms    Int?
+  parkingSpots Int?
+  propertyType PropertyType
+  auctionType  AuctionType
+  minBid       Decimal        @db.Decimal(12, 2)
+  currentBid   Decimal?       @db.Decimal(12, 2)
+  bidIncrement Decimal        @default(1000) @db.Decimal(12, 2)
+  auctionStart DateTime
+  auctionEnd   DateTime
+  status       PropertyStatus @default(PENDING)
+  featured     Boolean        @default(false)
+  // External source fields
+  source       PropertySource @default(MANUAL)
+  externalId   String?
+  externalUrl  String?
+  bank         String?
+  modality     String?
+  discount     Float?
+  evaluatedValue Decimal?     @db.Decimal(12, 2)
+  // Relations
+  images       Image[]
+  bids         Bid[]
+  favorites    Favorite[]
+  leads        Lead[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([source, externalId])
+  @@map("properties")
+}
+
+model ScrapingLog {
+  id          String   @id @default(uuid())
+  source      String
+  state       String?
+  totalFound  Int      @default(0)
+  imported    Int      @default(0)
+  updated     Int      @default(0)
+  errors      Int      @default(0)
+  status      String   @default("running")
+  errorLog    String?  @db.Text
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+
+  @@map("scraping_logs")
+}
+
+model Bid {
+  id         String   @id @default(uuid())
+  amount     Decimal  @db.Decimal(12, 2)
+  userId     String
+  propertyId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("bids")
+}
+
+model Image {
+  id         String   @id @default(uuid())
+  url        String
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("images")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  propertyId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@map("favorites")
+}
+
+model Lead {
+  id         String     @id @default(uuid())
+  name       String
+  email      String
+  phone      String
+  message    String?    @db.Text
+  propertyId String
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  status     LeadStatus @default(NEW)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@map("leads")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  LAND
+  COMMERCIAL
+  RURAL
+}
+
+enum AuctionType {
+  JUDICIAL
+  EXTRAJUDICIAL
+}
+
+enum PropertyStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  PENDING
+}
+
+enum PropertySource {
+  MANUAL
+  CAIXA
+  BANCO_DO_BRASIL
+  BRB
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  LOST
+}

@@ -29,6 +29,18 @@ class Scheduler {
     // Run Multi-bank scrapers - Daily at 4:00 AM
     this.scheduleJob('scrapeMulti', '0 4 * * *', this.runMultiBankScraperJob.bind(this), 'Diário às 04:00');
 
+    // Run Leiloeiros scrapers - Daily at 5:00 AM
+    this.scheduleJob('scrapeLeiloeiros', '0 5 * * *', this.runLeiloeirosScraperJob.bind(this), 'Diário às 05:00');
+
+    // Run Leiloeiros adicionais - Daily at 6:00 AM
+    this.scheduleJob('scrapeLeiloeirosAdicionais', '0 6 * * *', this.runLeiloeirosAdicionaisJob.bind(this), 'Diário às 06:00');
+
+    // Run Bancos adicionais (BRB, Banrisul) - Daily at 7:00 AM
+    this.scheduleJob('scrapeBancosAdicionais', '0 7 * * *', this.runBancosAdicionaisJob.bind(this), 'Diário às 07:00');
+
+    // Run Governamentais (EMGEA, Receita) - Daily at 8:00 AM
+    this.scheduleJob('scrapeGovernamentais', '0 8 * * *', this.runGovernamentaisJob.bind(this), 'Diário às 08:00');
+
     // Log scheduler stats - Every 6 hours
     this.scheduleJob('logStats', '0 */6 * * *', this.logStats.bind(this), 'A cada 6 horas');
 
@@ -195,6 +207,134 @@ class Scheduler {
     return results;
   }
 
+  // Run leiloeiros scrapers (Bradesco, Sold, Mega Leilões, etc.)
+  async runLeiloeirosScraperJob() {
+    console.log('[Scheduler] Running leiloeiros scrapers...');
+    const results = {};
+
+    try {
+      const scraperLeiloeiros = require('./scraperLeiloeiros');
+      const leiloeiros = [
+        { name: 'bradesco', fn: scraperLeiloeiros.scrapeBradesco },
+        { name: 'sold', fn: scraperLeiloeiros.scrapeSold },
+        { name: 'megaLeiloes', fn: scraperLeiloeiros.scrapeMegaLeiloes },
+        { name: 'lanceNoLeilao', fn: scraperLeiloeiros.scrapeLanceNoLeilao },
+        { name: 'superbid', fn: scraperLeiloeiros.scrapeSuperbid }
+      ];
+
+      for (const leiloeiro of leiloeiros) {
+        try {
+          console.log(`[Scheduler] Scraping ${leiloeiro.name}...`);
+          const result = await leiloeiro.fn();
+          results[leiloeiro.name] = result;
+        } catch (error) {
+          console.error(`[Scheduler] ${leiloeiro.name} scraper failed:`, error.message);
+          results[leiloeiro.name] = { error: error.message };
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Leiloeiros scraper job failed:', error.message);
+    }
+
+    return results;
+  }
+
+  // Run leiloeiros adicionais scrapers
+  async runLeiloeirosAdicionaisJob() {
+    console.log('[Scheduler] Running leiloeiros adicionais scrapers...');
+    const results = {};
+
+    try {
+      const scraperLeiloeiros = require('./scraperLeiloeiros');
+      const leiloeiros = [
+        { name: 'biasi', fn: scraperLeiloeiros.scrapeBiasi },
+        { name: 'frazao', fn: scraperLeiloeiros.scrapeFrazao },
+        { name: 'vipLeiloes', fn: scraperLeiloeiros.scrapeVipLeiloes },
+        { name: 'pestana', fn: scraperLeiloeiros.scrapePestana },
+        { name: 'kronberg', fn: scraperLeiloeiros.scrapeKronberg },
+        { name: 'sato', fn: scraperLeiloeiros.scrapeSato },
+        { name: 'lut', fn: scraperLeiloeiros.scrapeLut },
+        { name: 'sodreSantoro', fn: scraperLeiloeiros.scrapeSodreSantoro },
+        { name: 'zukerman', fn: scraperLeiloeiros.scrapeZukerman },
+        { name: 'brado', fn: scraperLeiloeiros.scrapeBrado },
+        { name: 'freitag', fn: scraperLeiloeiros.scrapeFreitag }
+      ];
+
+      for (const leiloeiro of leiloeiros) {
+        try {
+          console.log(`[Scheduler] Scraping ${leiloeiro.name}...`);
+          const result = await leiloeiro.fn();
+          results[leiloeiro.name] = result;
+        } catch (error) {
+          console.error(`[Scheduler] ${leiloeiro.name} scraper failed:`, error.message);
+          results[leiloeiro.name] = { error: error.message };
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Leiloeiros adicionais scraper job failed:', error.message);
+    }
+
+    return results;
+  }
+
+  // Run bancos adicionais scrapers (BRB, Banrisul)
+  async runBancosAdicionaisJob() {
+    console.log('[Scheduler] Running bancos adicionais scrapers...');
+    const results = {};
+
+    try {
+      const scraperLeiloeiros = require('./scraperLeiloeiros');
+      const bancos = [
+        { name: 'brb', fn: scraperLeiloeiros.scrapeBRB },
+        { name: 'banrisul', fn: scraperLeiloeiros.scrapeBanrisul }
+      ];
+
+      for (const banco of bancos) {
+        try {
+          console.log(`[Scheduler] Scraping ${banco.name}...`);
+          const result = await banco.fn();
+          results[banco.name] = result;
+        } catch (error) {
+          console.error(`[Scheduler] ${banco.name} scraper failed:`, error.message);
+          results[banco.name] = { error: error.message };
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Bancos adicionais scraper job failed:', error.message);
+    }
+
+    return results;
+  }
+
+  // Run governamentais scrapers (EMGEA, Receita Federal)
+  async runGovernamentaisJob() {
+    console.log('[Scheduler] Running governamentais scrapers...');
+    const results = {};
+
+    try {
+      const scraperLeiloeiros = require('./scraperLeiloeiros');
+      const fontes = [
+        { name: 'emgea', fn: scraperLeiloeiros.scrapeEmgea },
+        { name: 'receitaFederal', fn: scraperLeiloeiros.scrapeReceitaFederal }
+      ];
+
+      for (const fonte of fontes) {
+        try {
+          console.log(`[Scheduler] Scraping ${fonte.name}...`);
+          const result = await fonte.fn();
+          results[fonte.name] = result;
+        } catch (error) {
+          console.error(`[Scheduler] ${fonte.name} scraper failed:`, error.message);
+          results[fonte.name] = { error: error.message };
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Governamentais scraper job failed:', error.message);
+    }
+
+    return results;
+  }
+
   // Log database statistics
   async logStats() {
     const [total, active, pending, cancelled, byBank, leads, recentLeads] = await Promise.all([
@@ -241,6 +381,10 @@ class Scheduler {
       scrapeCaixa: this.runCaixaScraperJob.bind(this),
       scrapeBB: this.runBBScraperJob.bind(this),
       scrapeMulti: this.runMultiBankScraperJob.bind(this),
+      scrapeLeiloeiros: this.runLeiloeirosScraperJob.bind(this),
+      scrapeLeiloeirosAdicionais: this.runLeiloeirosAdicionaisJob.bind(this),
+      scrapeBancosAdicionais: this.runBancosAdicionaisJob.bind(this),
+      scrapeGovernamentais: this.runGovernamentaisJob.bind(this),
       logStats: this.logStats.bind(this)
     };
 

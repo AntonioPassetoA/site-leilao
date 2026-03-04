@@ -343,35 +343,36 @@ async function scrapePortalZuk() {
           const items = [];
           const processedUrls = new Set();
 
-          // Find all property links
-          const links = document.querySelectorAll('a[href*="/lote/"], a[href*="/imovel/"]');
+          // Portal Zuk usa .card-property para os cards de imóveis
+          const cards = document.querySelectorAll('.card-property');
 
-          links.forEach(link => {
+          cards.forEach(card => {
             try {
-              const href = link.href;
-              if (!href || processedUrls.has(href)) return;
+              const linkEl = card.querySelector('a[href*="/imovel/"]');
+              if (!linkEl) return;
+
+              const href = linkEl.href;
+              if (processedUrls.has(href)) return;
               processedUrls.add(href);
 
-              let card = link.closest('.card, [class*="card"], article, li, div[class*="lote"]');
-              if (!card) card = link.parentElement?.parentElement?.parentElement;
+              // Imagem
+              const imgEl = card.querySelector('img');
+              const image = imgEl ? imgEl.src : '';
 
-              // Extract price
-              const priceMatch = (card?.textContent || '').match(/R\$\s*[\d.,]+/);
+              // Localização
+              const addressEl = card.querySelector('.card-property-address');
+              const location = addressEl ? addressEl.innerText.trim() : '';
+
+              // Preço - procurar no texto do card
+              const cardText = card.innerText || '';
+              const priceMatch = cardText.match(/R\$\s*[\d.,]+/);
               const price = priceMatch ? priceMatch[0] : '';
 
-              // Extract title/type
-              const titleEl = card?.querySelector('h1, h2, h3, h4, h5, [class*="tipo"], [class*="title"]');
-              const title = titleEl?.textContent?.trim() || '';
+              // Título - pegar do atributo title do link
+              const titleEl = card.querySelector('[title]');
+              const title = titleEl ? titleEl.getAttribute('title') : '';
 
-              // Extract location
-              const locationEl = card?.querySelector('[class*="cidade"], [class*="local"], [class*="endereco"]');
-              const location = locationEl?.textContent?.trim() || '';
-
-              // Extract image
-              const imgEl = card?.querySelector('img');
-              const image = imgEl?.src || '';
-
-              if (href && price) {
+              if (href) {
                 items.push({ link: href, price, title, location, image });
               }
             } catch (e) {}

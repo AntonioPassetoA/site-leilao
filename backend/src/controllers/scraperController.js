@@ -2,6 +2,7 @@ const scraper = require('../services/scraper');
 const scheduler = require('../services/scheduler');
 const scraperBB = require('../services/scraperBB');
 const scraperMulti = require('../services/scraperMultiBancos');
+const scraperLeiloeiros = require('../services/scraperLeiloeiros');
 
 // Start scraping all states
 const scrapeAll = async (req, res) => {
@@ -226,6 +227,254 @@ const getMultiBankStats = async (req, res) => {
   }
 };
 
+// ==================== NOVOS LEILOEIROS ====================
+
+// Scrape Bradesco
+const scrapeBradesco = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Bradesco iniciado', source: 'BRADESCO' });
+    scraperLeiloeiros.scrapeBradesco().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Bradesco' });
+  }
+};
+
+// Scrape Sold
+const scrapeSold = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Sold Leilões iniciado', source: 'SOLD' });
+    scraperLeiloeiros.scrapeSold().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Sold' });
+  }
+};
+
+// Scrape Mega Leilões
+const scrapeMegaLeiloes = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Mega Leilões iniciado', source: 'MEGA_LEILOES' });
+    scraperLeiloeiros.scrapeMegaLeiloes().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Mega Leilões' });
+  }
+};
+
+// Scrape Lance no Leilão
+const scrapeLanceNoLeilao = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Lance no Leilão iniciado', source: 'LANCE_NO_LEILAO' });
+    scraperLeiloeiros.scrapeLanceNoLeilao().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Lance no Leilão' });
+  }
+};
+
+// Scrape Superbid
+const scrapeSuperbid = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Superbid iniciado', source: 'SUPERBID' });
+    scraperLeiloeiros.scrapeSuperbid().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Superbid' });
+  }
+};
+
+// Scrape all leiloeiros
+const scrapeAllLeiloeiros = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping de todos os leiloeiros iniciado' });
+    scraperLeiloeiros.scrapeAllLeiloeiros().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping dos leiloeiros' });
+  }
+};
+
+// Get leiloeiros stats
+const getLeiloeirosStats = async (req, res) => {
+  try {
+    const stats = await scraperLeiloeiros.getLeiloeirosStats();
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar estatísticas dos leiloeiros' });
+  }
+};
+
+// ==================== LEILOEIROS ADICIONAIS ====================
+
+// Scrape Biasi
+const scrapeBiasi = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Biasi Leilões iniciado', source: 'BIASI' });
+    scraperLeiloeiros.scrapeBiasi().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Biasi' });
+  }
+};
+
+// Scrape Frazão
+const scrapeFrazao = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Frazão Leilões iniciado', source: 'FRAZAO' });
+    scraperLeiloeiros.scrapeFrazao().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Frazão' });
+  }
+};
+
+// Scrape VIP Leilões
+const scrapeVipLeiloes = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping VIP Leilões iniciado', source: 'VIP_LEILOES' });
+    scraperLeiloeiros.scrapeVipLeiloes().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping VIP Leilões' });
+  }
+};
+
+// Scrape Pestana
+const scrapePestana = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Pestana Leilões iniciado', source: 'PESTANA' });
+    scraperLeiloeiros.scrapePestana().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Pestana' });
+  }
+};
+
+// Scrape Kronberg
+const scrapeKronberg = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Kronberg Leilões iniciado', source: 'KRONBERG' });
+    scraperLeiloeiros.scrapeKronberg().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Kronberg' });
+  }
+};
+
+// Scrape Sato
+const scrapeSato = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Sato Leilões iniciado', source: 'SATO' });
+    scraperLeiloeiros.scrapeSato().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Sato' });
+  }
+};
+
+// Scrape Lut
+const scrapeLut = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Lut Leilões iniciado', source: 'LUT' });
+    scraperLeiloeiros.scrapeLut().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Lut' });
+  }
+};
+
+// Scrape Sodré Santoro
+const scrapeSodreSantoro = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Sodré Santoro iniciado', source: 'SODRE_SANTORO' });
+    scraperLeiloeiros.scrapeSodreSantoro().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Sodré Santoro' });
+  }
+};
+
+// Scrape Zukerman
+const scrapeZukerman = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Zukerman Leilões iniciado', source: 'ZUKERMAN' });
+    scraperLeiloeiros.scrapeZukerman().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Zukerman' });
+  }
+};
+
+// Scrape Brado
+const scrapeBrado = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Brado Leilões iniciado', source: 'BRADO' });
+    scraperLeiloeiros.scrapeBrado().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Brado' });
+  }
+};
+
+// Scrape Freitag
+const scrapeFreitag = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Freitag Leilões iniciado', source: 'FREITAG' });
+    scraperLeiloeiros.scrapeFreitag().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Freitag' });
+  }
+};
+
+// ==================== BANCOS ADICIONAIS ====================
+
+// Scrape BRB
+const scrapeBRB = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping BRB iniciado', source: 'BRB' });
+    scraperLeiloeiros.scrapeBRB().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping BRB' });
+  }
+};
+
+// Scrape Banrisul
+const scrapeBanrisul = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Banrisul iniciado', source: 'BANRISUL' });
+    scraperLeiloeiros.scrapeBanrisul().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Banrisul' });
+  }
+};
+
+// Scrape all additional banks
+const scrapeAllBancosAdicionais = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping de bancos adicionais iniciado' });
+    scraperLeiloeiros.scrapeAllBancosAdicionais().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping dos bancos adicionais' });
+  }
+};
+
+// ==================== GOVERNAMENTAIS ====================
+
+// Scrape EMGEA
+const scrapeEmgea = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping EMGEA iniciado', source: 'EMGEA' });
+    scraperLeiloeiros.scrapeEmgea().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping EMGEA' });
+  }
+};
+
+// Scrape Receita Federal
+const scrapeReceitaFederal = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping Receita Federal iniciado', source: 'RECEITA_FEDERAL' });
+    scraperLeiloeiros.scrapeReceitaFederal().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping Receita Federal' });
+  }
+};
+
+// Scrape all governamentais
+const scrapeAllGovernamentais = async (req, res) => {
+  try {
+    res.json({ message: 'Scraping de fontes governamentais iniciado' });
+    scraperLeiloeiros.scrapeAllGovernamentais().catch(console.error);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao iniciar scraping governamental' });
+  }
+};
+
 module.exports = {
   scrapeAll,
   scrapeState,
@@ -243,5 +492,33 @@ module.exports = {
   scrapeItau,
   scrapePortalZuk,
   scrapeAllBanks,
-  getMultiBankStats
+  getMultiBankStats,
+  // Leiloeiros principais
+  scrapeBradesco,
+  scrapeSold,
+  scrapeMegaLeiloes,
+  scrapeLanceNoLeilao,
+  scrapeSuperbid,
+  scrapeAllLeiloeiros,
+  getLeiloeirosStats,
+  // Leiloeiros adicionais
+  scrapeBiasi,
+  scrapeFrazao,
+  scrapeVipLeiloes,
+  scrapePestana,
+  scrapeKronberg,
+  scrapeSato,
+  scrapeLut,
+  scrapeSodreSantoro,
+  scrapeZukerman,
+  scrapeBrado,
+  scrapeFreitag,
+  // Bancos adicionais
+  scrapeBRB,
+  scrapeBanrisul,
+  scrapeAllBancosAdicionais,
+  // Governamentais
+  scrapeEmgea,
+  scrapeReceitaFederal,
+  scrapeAllGovernamentais
 };

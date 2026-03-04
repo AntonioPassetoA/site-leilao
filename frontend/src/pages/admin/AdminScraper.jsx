@@ -22,6 +22,8 @@ export default function AdminScraper() {
   const [scrapingBB, setScrapingBB] = useState(false)
   const [multiBankStats, setMultiBankStats] = useState({})
   const [scrapingBank, setScrapingBank] = useState(null)
+  const [leiloeirosStats, setLeiloeirosStats] = useState({})
+  const [scrapingLeiloeiro, setScrapingLeiloeiro] = useState(null)
 
   useEffect(() => {
     loadData()
@@ -29,18 +31,20 @@ export default function AdminScraper() {
 
   const loadData = async () => {
     try {
-      const [statsRes, logsRes, schedulerRes, bbStatsRes, multiBankRes] = await Promise.all([
+      const [statsRes, logsRes, schedulerRes, bbStatsRes, multiBankRes, leiloeirosRes] = await Promise.all([
         api.get('/scraper/stats'),
         api.get('/scraper/logs?limit=10'),
         api.get('/scraper/scheduler/status'),
         api.get('/scraper/bb/stats').catch(() => ({ data: { totalProperties: 0 } })),
-        api.get('/scraper/banks/stats').catch(() => ({ data: {} }))
+        api.get('/scraper/banks/stats').catch(() => ({ data: {} })),
+        api.get('/scraper/leiloeiros/stats').catch(() => ({ data: {} }))
       ])
       setStats(statsRes.data)
       setLogs(logsRes.data)
       setScheduler(schedulerRes.data)
       setBBStats(bbStatsRes.data)
       setMultiBankStats(multiBankRes.data)
+      setLeiloeirosStats(leiloeirosRes.data)
     } catch (error) {
       console.error('Error loading scraper data:', error)
     } finally {
@@ -113,6 +117,40 @@ export default function AdminScraper() {
       setMessage({ type: 'error', text: 'Erro ao iniciar importação: ' + error.message })
     } finally {
       setScrapingBank(null)
+      setTimeout(loadData, 15000)
+    }
+  }
+
+  const handleScrapeLeiloeiro = async (leiloeiro, endpoint, leiloeiroName) => {
+    setScrapingLeiloeiro(leiloeiro)
+    setMessage({ type: 'info', text: `Importando imóveis ${leiloeiroName}...` })
+
+    try {
+      await api.post(endpoint)
+      setMessage({ type: 'success', text: `Importação ${leiloeiroName} iniciada em background.` })
+    } catch (error) {
+      setMessage({ type: 'error', text: `Erro ao iniciar importação ${leiloeiroName}: ` + error.message })
+    } finally {
+      setScrapingLeiloeiro(null)
+      setTimeout(loadData, 10000)
+    }
+  }
+
+  const handleScrapeAllLeiloeiros = async () => {
+    if (!confirm('Iniciar importação de TODOS os leiloeiros? Isso pode demorar vários minutos.')) {
+      return
+    }
+
+    setScrapingLeiloeiro('ALL_LEILOEIROS')
+    setMessage({ type: 'info', text: 'Importação de todos os leiloeiros iniciada...' })
+
+    try {
+      await api.post('/scraper/leiloeiros/all')
+      setMessage({ type: 'success', text: 'Importação de todos os leiloeiros iniciada em background.' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao iniciar importação: ' + error.message })
+    } finally {
+      setScrapingLeiloeiro(null)
       setTimeout(loadData, 15000)
     }
   }
@@ -458,6 +496,484 @@ export default function AdminScraper() {
         </p>
       </div>
 
+      {/* Leiloeiros Section */}
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
+        <h2 className="font-semibold text-gray-900 mb-4">Leiloeiros e Portais de Leilão</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Bradesco */}
+          <div className="border rounded-lg p-4 border-red-200 bg-red-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-red-600"></div>
+              <h3 className="font-medium text-gray-900">Bradesco</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Leilões Bradesco</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Bradesco'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('bradesco', '/scraper/bradesco', 'Bradesco')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-red-600 hover:bg-red-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'bradesco' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar'}
+            </button>
+          </div>
+
+          {/* Sold Leilões */}
+          <div className="border rounded-lg p-4 border-blue-200 bg-blue-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+              <h3 className="font-medium text-gray-900">Sold Leilões</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Portal Sold</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Sold'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('sold', '/scraper/sold', 'Sold Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'sold' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar'}
+            </button>
+          </div>
+
+          {/* Mega Leilões */}
+          <div className="border rounded-lg p-4 border-green-200 bg-green-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-green-600"></div>
+              <h3 className="font-medium text-gray-900">Mega Leilões</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Portal Mega Leilões</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Mega Leilões'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('mega', '/scraper/mega', 'Mega Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-green-600 hover:bg-green-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'mega' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar'}
+            </button>
+          </div>
+
+          {/* Lance no Leilão */}
+          <div className="border rounded-lg p-4 border-amber-200 bg-amber-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-amber-600"></div>
+              <h3 className="font-medium text-gray-900">Lance no Leilão</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Portal Lance no Leilão</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Lance no Leilão'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('lance', '/scraper/lance', 'Lance no Leilão')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-amber-600 hover:bg-amber-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'lance' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar'}
+            </button>
+          </div>
+
+          {/* Superbid */}
+          <div className="border rounded-lg p-4 border-indigo-200 bg-indigo-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+              <h3 className="font-medium text-gray-900">Superbid</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Portal Superbid</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Superbid'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('superbid', '/scraper/superbid', 'Superbid')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'superbid' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar'}
+            </button>
+          </div>
+
+          {/* Import All Leiloeiros */}
+          <div className="border rounded-lg p-4 border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 to-indigo-500"></div>
+              <h3 className="font-medium text-gray-900">Todos os Leiloeiros</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Bradesco + Sold + Mega + Lance + Superbid</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">
+              {(leiloeirosStats['Bradesco'] || 0) + (leiloeirosStats['Sold'] || 0) + (leiloeirosStats['Mega Leilões'] || 0) + (leiloeirosStats['Lance no Leilão'] || 0) + (leiloeirosStats['Superbid'] || 0)} total
+            </p>
+            <button
+              onClick={handleScrapeAllLeiloeiros}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-gradient-to-r from-red-600 via-green-600 to-indigo-600 hover:from-red-700 hover:via-green-700 hover:to-indigo-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'ALL_LEILOEIROS' ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  Importando...
+                </span>
+              ) : 'Importar Todos'}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          * Os leiloeiros principais são executados automaticamente diariamente às 05:00 (horário de Brasília).
+        </p>
+      </div>
+
+      {/* Leiloeiros Adicionais Section */}
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
+        <h2 className="font-semibold text-gray-900 mb-4">Leiloeiros Adicionais</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Biasi */}
+          <div className="border rounded-lg p-3 border-pink-200 bg-pink-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-pink-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Biasi Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Biasi Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('biasi', '/scraper/biasi', 'Biasi Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-pink-600 hover:bg-pink-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'biasi' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Frazão */}
+          <div className="border rounded-lg p-3 border-cyan-200 bg-cyan-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-cyan-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Frazão Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Frazão Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('frazao', '/scraper/frazao', 'Frazão Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'frazao' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* VIP Leilões */}
+          <div className="border rounded-lg p-3 border-violet-200 bg-violet-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-violet-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">VIP Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['VIP Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('vip', '/scraper/vip', 'VIP Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'vip' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Pestana */}
+          <div className="border rounded-lg p-3 border-rose-200 bg-rose-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-rose-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Pestana Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Pestana Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('pestana', '/scraper/pestana', 'Pestana Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-rose-600 hover:bg-rose-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'pestana' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Kronberg */}
+          <div className="border rounded-lg p-3 border-teal-200 bg-teal-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-teal-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Kronberg Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Kronberg Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('kronberg', '/scraper/kronberg', 'Kronberg Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-teal-600 hover:bg-teal-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'kronberg' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Sato */}
+          <div className="border rounded-lg p-3 border-lime-200 bg-lime-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-lime-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Sato Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Sato Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('sato', '/scraper/sato', 'Sato Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-lime-600 hover:bg-lime-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'sato' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Lut */}
+          <div className="border rounded-lg p-3 border-sky-200 bg-sky-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-sky-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Lut Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Lut Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('lut', '/scraper/lut', 'Lut Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-sky-600 hover:bg-sky-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'lut' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Sodré Santoro */}
+          <div className="border rounded-lg p-3 border-fuchsia-200 bg-fuchsia-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-fuchsia-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Sodré Santoro</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Sodré Santoro'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('sodre', '/scraper/sodre', 'Sodré Santoro')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-fuchsia-600 hover:bg-fuchsia-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'sodre' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Zukerman */}
+          <div className="border rounded-lg p-3 border-emerald-200 bg-emerald-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Zukerman Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Zukerman Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('zukerman', '/scraper/zukerman', 'Zukerman Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'zukerman' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Brado */}
+          <div className="border rounded-lg p-3 border-orange-200 bg-orange-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-orange-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Brado Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Brado Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('brado', '/scraper/brado', 'Brado Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'brado' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Freitag */}
+          <div className="border rounded-lg p-3 border-slate-200 bg-slate-50">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-slate-600"></div>
+              <h3 className="font-medium text-gray-900 text-sm">Freitag Leilões</h3>
+            </div>
+            <p className="text-lg font-bold text-gray-900 mb-2">{leiloeirosStats['Freitag Leilões'] || 0}</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('freitag', '/scraper/freitag', 'Freitag Leilões')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-xs py-1 bg-slate-600 hover:bg-slate-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'freitag' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          * Os leiloeiros adicionais são executados automaticamente diariamente às 06:00 (horário de Brasília).
+        </p>
+      </div>
+
+      {/* Bancos Adicionais Section */}
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
+        <h2 className="font-semibold text-gray-900 mb-4">Bancos Adicionais</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* BRB */}
+          <div className="border rounded-lg p-4 border-blue-200 bg-blue-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-blue-700"></div>
+              <h3 className="font-medium text-gray-900">BRB</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Banco de Brasília</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['BRB'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('brb', '/scraper/brb', 'BRB')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-blue-700 hover:bg-blue-800 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'brb' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Banrisul */}
+          <div className="border rounded-lg p-4 border-blue-200 bg-blue-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+              <h3 className="font-medium text-gray-900">Banrisul</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Banco do Rio Grande do Sul</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Banrisul'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('banrisul', '/scraper/banrisul', 'Banrisul')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'banrisul' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Import All Bancos Adicionais */}
+          <div className="border rounded-lg p-4 border-gray-300 bg-gradient-to-br from-blue-50 to-blue-100">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-800"></div>
+              <h3 className="font-medium text-gray-900">Todos os Bancos</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">BRB + Banrisul</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">
+              {(leiloeirosStats['BRB'] || 0) + (leiloeirosStats['Banrisul'] || 0)} total
+            </p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('ALL_BANCOS', '/scraper/bancos-adicionais/all', 'todos os bancos adicionais')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-gradient-to-r from-blue-600 to-blue-800 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'ALL_BANCOS' ? 'Importando...' : 'Importar Todos'}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          * Os bancos adicionais são executados automaticamente diariamente às 07:00 (horário de Brasília).
+        </p>
+      </div>
+
+      {/* Fontes Governamentais Section */}
+      <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
+        <h2 className="font-semibold text-gray-900 mb-4">Fontes Governamentais</h2>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* EMGEA */}
+          <div className="border rounded-lg p-4 border-green-200 bg-green-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-green-700"></div>
+              <h3 className="font-medium text-gray-900">EMGEA</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Empresa Gestora de Ativos</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['EMGEA'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('emgea', '/scraper/emgea', 'EMGEA')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-green-700 hover:bg-green-800 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'emgea' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Receita Federal */}
+          <div className="border rounded-lg p-4 border-yellow-200 bg-yellow-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-600"></div>
+              <h3 className="font-medium text-gray-900">Receita Federal</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Leilões da Receita</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">{leiloeirosStats['Receita Federal'] || 0} imóveis</p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('receita', '/scraper/receita', 'Receita Federal')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'receita' ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+
+          {/* Import All Governamentais */}
+          <div className="border rounded-lg p-4 border-gray-300 bg-gradient-to-br from-green-50 to-yellow-50">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-600 to-yellow-600"></div>
+              <h3 className="font-medium text-gray-900">Todas as Fontes</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">EMGEA + Receita Federal</p>
+            <p className="text-lg font-bold text-gray-900 mb-3">
+              {(leiloeirosStats['EMGEA'] || 0) + (leiloeirosStats['Receita Federal'] || 0)} total
+            </p>
+            <button
+              onClick={() => handleScrapeLeiloeiro('ALL_GOV', '/scraper/governamentais/all', 'todas as fontes governamentais')}
+              disabled={scrapingLeiloeiro !== null}
+              className="btn-primary w-full text-sm bg-gradient-to-r from-green-600 to-yellow-600 disabled:opacity-50"
+            >
+              {scrapingLeiloeiro === 'ALL_GOV' ? 'Importando...' : 'Importar Todos'}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          * As fontes governamentais são executadas automaticamente diariamente às 08:00 (horário de Brasília).
+        </p>
+      </div>
+
       {/* Import Logs */}
       <div className="bg-white rounded-xl shadow-sm">
         <div className="p-6 border-b flex justify-between items-center">
@@ -582,16 +1098,53 @@ export default function AdminScraper() {
 
       {/* Info */}
       <div className="mt-8 bg-blue-50 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-2">Sobre a Importação</h3>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li><strong>Caixa:</strong> Importação via CSV oficial - mais rápida e confiável</li>
-          <li><strong>Banco do Brasil:</strong> Scraping via Puppeteer do site seuimovelbb.com.br</li>
-          <li><strong>Santander:</strong> Scraping via Puppeteer do portal Resale.com.br</li>
-          <li><strong>Itaú:</strong> Scraping via Puppeteer do portal de imóveis do Itaú</li>
-          <li><strong>Portal Zuk:</strong> Agregador de leilões com múltiplas fontes</li>
-          <li>A importação atualiza automaticamente imóveis já existentes (não duplica)</li>
-          <li>Recomendamos executar a importação completa pelo menos uma vez por dia</li>
-        </ul>
+        <h3 className="font-semibold text-blue-900 mb-3">Sobre a Importação</h3>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">Bancos Principais</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>Caixa:</strong> Via CSV oficial (02:00)</li>
+              <li><strong>Banco do Brasil:</strong> seuimovelbb.com.br (03:00)</li>
+              <li><strong>Santander:</strong> Resale.com.br (04:00)</li>
+              <li><strong>Itaú:</strong> Portal Itaú Imóveis (04:00)</li>
+              <li><strong>Portal Zuk:</strong> Agregador de leilões (04:00)</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">Leiloeiros Principais</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>Bradesco, Sold, Mega Leilões</strong> (05:00)</li>
+              <li><strong>Lance no Leilão, Superbid</strong> (05:00)</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">Leiloeiros Adicionais</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>Biasi, Frazão, VIP, Pestana</strong> (06:00)</li>
+              <li><strong>Kronberg, Sato, Lut, Sodré Santoro</strong> (06:00)</li>
+              <li><strong>Zukerman, Brado, Freitag</strong> (06:00)</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-medium text-blue-800 mb-2">Outras Fontes</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>BRB, Banrisul:</strong> Bancos regionais (07:00)</li>
+              <li><strong>EMGEA:</strong> Imóveis da União (08:00)</li>
+              <li><strong>Receita Federal:</strong> Leilões judiciais (08:00)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-blue-200">
+          <p className="text-sm text-blue-700">
+            A importação atualiza automaticamente imóveis já existentes (não duplica).
+            Total de <strong>20+ fontes</strong> de leilões de imóveis integradas.
+          </p>
+        </div>
       </div>
     </div>
   )

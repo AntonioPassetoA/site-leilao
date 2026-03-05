@@ -18,21 +18,39 @@ function parseCurrency(value) {
 function detectPropertyType(text) {
   const t = text?.toLowerCase() || '';
 
-  // Excluir veículos - retorna null para não importar
-  if (t.includes('carro') || t.includes('veículo') || t.includes('veiculo') ||
-      t.includes('moto') || t.includes('caminhão') || t.includes('caminhao') ||
-      t.includes('ônibus') || t.includes('onibus') || t.includes('van') ||
-      t.includes('utilitário') || t.includes('utilitario') || t.includes('trator') ||
-      t.includes('máquina') || t.includes('maquina') || t.includes('equipamento') ||
-      t.includes('fiat') || t.includes('volkswagen') || t.includes('chevrolet') ||
-      t.includes('ford') || t.includes('honda') || t.includes('toyota') ||
-      t.includes('hyundai') || t.includes('renault') || t.includes('peugeot') ||
-      t.includes('citroen') || t.includes('jeep') || t.includes('bmw') ||
-      t.includes('mercedes') || t.includes('audi') || t.includes('porsche') ||
-      t.includes('yamaha') || t.includes('suzuki') || t.includes('kawasaki') ||
-      t.includes('harley') || t.includes('scania') || t.includes('volvo') ||
-      t.includes('iveco') || t.includes('man ') || t.includes('daf ')) {
-    return null; // Não é imóvel
+  // Lista de palavras que indicam que NÃO é imóvel
+  const notRealEstate = [
+    // Veículos
+    'carro', 'veículo', 'veiculo', 'moto', 'motocicleta', 'caminhão', 'caminhao',
+    'ônibus', 'onibus', 'van', 'utilitário', 'utilitario', 'automóvel', 'automovel',
+    // Máquinas agrícolas
+    'trator', 'tratores', 'colheitadeira', 'colhedeira', 'plantadeira', 'pulverizador',
+    'semeadeira', 'retroescavadeira', 'escavadeira', 'carregadeira', 'motoniveladora',
+    'rolo compactador', 'pá carregadeira', 'empilhadeira', 'guincho', 'guindaste',
+    // Marcas de veículos
+    'fiat', 'volkswagen', 'chevrolet', 'ford', 'honda', 'toyota', 'hyundai', 'renault',
+    'peugeot', 'citroen', 'jeep', 'bmw', 'mercedes', 'audi', 'porsche', 'nissan', 'kia',
+    'mitsubishi', 'subaru', 'land rover', 'jaguar', 'ferrari', 'lamborghini',
+    // Marcas de motos
+    'yamaha', 'suzuki', 'kawasaki', 'harley', 'ducati', 'triumph', 'ktm', 'dafra',
+    // Marcas de caminhões
+    'scania', 'volvo', 'iveco', 'man ', 'daf ', 'volkswagen',
+    // Marcas de máquinas agrícolas
+    'massey', 'ferguson', 'john deere', 'new holland', 'case', 'valtra', 'caterpillar',
+    'komatsu', 'jcb', 'liebherr', 'bobcat',
+    // Equipamentos e outros bens
+    'máquina', 'maquina', 'equipamento', 'implemento', 'agrícola', 'agricola',
+    'tanque', 'silo', 'carreta', 'reboque', 'semi-reboque', 'semirreboque',
+    'móveis', 'moveis', 'bens móveis', 'sucata', 'eletrônicos', 'eletronicos',
+    'estoque', 'mercadoria', 'actyon', 'prisma', 'gol', 'uno', 'palio', 'corsa',
+    'celta', 'civic', 'corolla', 'hilux', 'ranger', 's10', 'amarok', 'saveiro'
+  ];
+
+  // Verificar se contém palavras de não-imóvel
+  for (const word of notRealEstate) {
+    if (t.includes(word)) {
+      return null; // Não é imóvel
+    }
   }
 
   if (t.includes('apartamento') || t.includes('apto')) return 'APARTMENT';

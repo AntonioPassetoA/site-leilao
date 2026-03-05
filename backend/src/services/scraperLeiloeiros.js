@@ -1449,9 +1449,17 @@ async function scrapeSodreSantoro() {
               const titleEl = card.querySelector('h1, h2, h3, h4, h5, [class*="titulo"], [class*="title"]');
               const title = titleEl?.textContent?.trim() || '';
 
-              // Extrair localização
-              const locationMatch = text.match(/([A-Za-zÀ-ÿ\s]+)\s*[-\/]\s*([A-Z]{2})/);
-              const location = locationMatch ? `${locationMatch[1].trim()} - ${locationMatch[2]}` : '';
+              // Extrair localização - evitar pegar tipo de imóvel como cidade
+              const badWords = ['imóvel', 'imovel', 'apartamento', 'casa', 'terreno', 'lote', 'galpão', 'galpao', 'sala', 'loja', 'prédio', 'predio', 'comercial', 'residencial', 'industrial', 'rural', 'edificações', 'edificacoes', 'direitos', 'duplex', 'cobertura', 'kitnet'];
+              const locationMatches = [...text.matchAll(/([A-Za-zÀ-ÿ\s]+)\s*[-\/]\s*([A-Z]{2})/gi)];
+              let location = '';
+              for (const match of locationMatches) {
+                const possibleCity = match[1].trim().toLowerCase();
+                if (!badWords.some(w => possibleCity.includes(w)) && possibleCity.length > 2) {
+                  location = `${match[1].trim()} - ${match[2]}`;
+                  break;
+                }
+              }
 
               // Extrair imagem
               const imgEl = card.querySelector('img');

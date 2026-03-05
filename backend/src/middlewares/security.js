@@ -10,12 +10,22 @@ const helmetConfig = helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      imgSrc: ["'self'", "data:", "https://venda-imoveis.caixa.gov.br", "https://*.megaleiloes.com.br", "https://*.pestanaleiloes.com.br", "blob:"],
       scriptSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
       frameSrc: ["https://www.google.com"],
-      connectSrc: ["'self'", "https://www.google.com"]
+      connectSrc: ["'self'", "https://www.google.com", "wss:", "ws:"]
     }
   },
+  // HSTS - Força HTTPS por 1 ano
+  hsts: {
+    maxAge: 31536000, // 1 ano em segundos
+    includeSubDomains: true,
+    preload: true
+  },
+  // Proteções adicionais
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" }
 });
@@ -109,7 +119,7 @@ const compressionConfig = compression({
   threshold: 1024 // Only compress responses larger than 1KB
 });
 
-// XSS sanitization middleware
+// XSS sanitization middleware - proteção robusta
 const sanitizeInput = (req, res, next) => {
   if (req.body) {
     sanitizeObject(req.body);
@@ -126,11 +136,26 @@ const sanitizeInput = (req, res, next) => {
 function sanitizeObject(obj) {
   for (let key in obj) {
     if (typeof obj[key] === 'string') {
-      // Remove potential XSS patterns
+      // Remove potential XSS patterns - proteção mais abrangente
       obj[key] = obj[key]
+        // Remove scripts
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+\s*=/gi, '');
+        // Remove javascript: protocol
+        .replace(/javascript\s*:/gi, '')
+        // Remove event handlers (onclick, onerror, onload, etc)
+        .replace(/\bon\w+\s*=/gi, '')
+        // Remove data: protocol (pode ser usado para XSS)
+        .replace(/data\s*:/gi, '')
+        // Remove vbscript: protocol
+        .replace(/vbscript\s*:/gi, '')
+        // Remove expression() (IE CSS hack)
+        .replace(/expression\s*\(/gi, '')
+        // Remove tags perigosas
+        .replace(/<(iframe|object|embed|form|input|button|textarea|select|option)/gi, '&lt;$1')
+        // Remove SVG com eventos
+        .replace(/<svg[^>]*on\w+/gi, '<svg ')
+        // Encode caracteres HTML em contextos perigosos
+        .replace(/&#/g, '&amp;#');
     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
       sanitizeObject(obj[key]);
     }

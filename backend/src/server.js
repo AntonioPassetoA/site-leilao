@@ -30,6 +30,9 @@ const scraperRoutes = require('./routes/scraper');
 const leadRoutes = require('./routes/leads');
 const sitemapRoutes = require('./routes/sitemap');
 const { startScheduler } = require('./services/scheduler');
+const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +42,32 @@ const io = new Server(server, {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     methods: ['GET', 'POST'],
     credentials: true
+  }
+});
+
+// Socket.io authentication middleware
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { id: true, name: true, role: true }
+      });
+
+      if (user) {
+        socket.user = user;
+      }
+    }
+
+    // Permitir conexão mesmo sem auth (para visualização pública)
+    // mas usuário não autenticado não pode fazer lances
+    next();
+  } catch (error) {
+    // Token inválido - permitir conexão como anônimo
+    next();
   }
 });
 
@@ -90,16 +119,24 @@ app.get('/api/health', (req, res) => {
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  const userInfo = socket.user ? `${socket.user.name} (${socket.user.id})` : 'Anônimo';
+  console.log('User connected:', socket.id, '-', userInfo);
 
-  // Join auction room
-  socket.on('joinAuction', (propertyId) => {
+  // Join auction room - validar propertyId
+  socket.on('joinAuction', async (propertyId) => {
+    // Validar formato do propertyId (UUID)
+    if (!propertyId || typeof propertyId !== 'string' || propertyId.length > 50) {
+      socket.emit('error', { message: 'ID de leilão inválido' });
+      return;
+    }
+
     socket.join(`auction:${propertyId}`);
     console.log(`User ${socket.id} joined auction ${propertyId}`);
   });
 
   // Leave auction room
   socket.on('leaveAuction', (propertyId) => {
+    if (!propertyId || typeof propertyId !== 'string') return;
     socket.leave(`auction:${propertyId}`);
     console.log(`User ${socket.id} left auction ${propertyId}`);
   });

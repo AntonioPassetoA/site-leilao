@@ -37,6 +37,7 @@ temp/
 # Database
 *.db
 *.sqlite
+backup_*.sql
 
 # Uploads (keep folder structure)
 backend/uploads/*
@@ -44,6 +45,8 @@ backend/uploads/*
 
 # Claude Code
 .claude/
+.agents/
+skills-lock.json
 
 # Test coverage
 coverage/
